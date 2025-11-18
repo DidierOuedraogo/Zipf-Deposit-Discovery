@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from io import BytesIO
 import base64
+import hashlib
 
 # Configuration de la page
 st.set_page_config(
@@ -16,6 +17,98 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Système d'authentification
+def check_password():
+    """Retourne True si l'utilisateur a entré un mot de passe correct."""
+    
+    # Dictionnaire des utilisateurs (en production, utiliser une base de données sécurisée)
+    USERS = {
+        "Didier": "Gloria",
+        "edvsp": "edvsp@2025"
+    }
+    
+    def password_entered():
+        """Vérifie si le mot de passe est correct."""
+        username = st.session_state["username"]
+        password = st.session_state["password"]
+        
+        if username in USERS and USERS[username] == password:
+            st.session_state["password_correct"] = True
+            st.session_state["current_user"] = username
+            del st.session_state["password"]  # Ne pas stocker le mot de passe
+        else:
+            st.session_state["password_correct"] = False
+    
+    # Vérifier si déjà authentifié
+    if st.session_state.get("password_correct", False):
+        return True
+    
+    # Afficher le formulaire de connexion
+    st.markdown("""
+        <style>
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .login-title {
+            color: white;
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .login-subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.markdown('<div class="login-container">', unsafe_allow_html=True)
+        st.markdown('<div class="login-title">🔐 Connexion</div>', unsafe_allow_html=True)
+        st.markdown('<div class="login-subtitle">Zipf Law - Gold Deposit Discovery</div>', unsafe_allow_html=True)
+        
+        st.text_input(
+            "Nom d'utilisateur",
+            key="username",
+            placeholder="Entrez votre nom d'utilisateur"
+        )
+        st.text_input(
+            "Mot de passe",
+            type="password",
+            key="password",
+            placeholder="Entrez votre mot de passe",
+            on_change=password_entered
+        )
+        
+        if st.button("🚀 Se connecter", use_container_width=True, type="primary"):
+            password_entered()
+        
+        if "password_correct" in st.session_state and not st.session_state["password_correct"]:
+            st.error("❌ Nom d'utilisateur ou mot de passe incorrect")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown("""
+            <div style='text-align: center; color: #666; margin-top: 30px;'>
+                <p>Développé par Didier Ouedraogo, PGeo | Koulou Danshoko, Geo</p>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    return False
+
+# Vérifier l'authentification avant d'afficher l'application
+if not check_password():
+    st.stop()
 
 # Style CSS personnalisé
 st.markdown("""
@@ -79,8 +172,43 @@ st.markdown("""
         border-radius: 10px;
         margin: 20px 0;
     }
+    .user-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .logout-btn {
+        background: #f56565;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .logout-btn:hover {
+        background: #e53e3e;
+    }
     </style>
 """, unsafe_allow_html=True)
+
+# Bouton de déconnexion dans la barre latérale
+with st.sidebar:
+    st.markdown(f"""
+        <div class="user-info">
+            👤 Connecté en tant que: <strong>{st.session_state.get('current_user', 'Utilisateur')}</strong>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("🚪 Se déconnecter", use_container_width=True, type="secondary"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.rerun()
+    
+    st.divider()
 
 # Titre et en-tête
 st.title("📊 Zipf Law - Gold Deposit Discovery")
